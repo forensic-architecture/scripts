@@ -1,0 +1,16 @@
+.DS_Store
+.mayaSwatches/
+*.secret.py
+
+# Python files
+# ------------
+# Byte-compiled / optimized / DLL files
+.DS_Store
+__pycache__/*
+*.py[cod]
+
+# C extensions
+*.so
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
