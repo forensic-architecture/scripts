@@ -25,12 +25,12 @@ Ensure that the exported images are organised with the following folder
 structure:
 
 .
-+-- img
-|   +-- img1.png
-|   +-- img2.png
-+-- raw_ann 
-|   +-- img1.png
-|   +-- img2.png
++-- img     
+|   +-- img1.png     
+|   +-- img2.png     
++-- raw_ann      
+|   +-- img1.png     
+|   +-- img2.png     
 
 
 The original image should be in the 'img' folder, and the mask should be a file
