@@ -14,7 +14,7 @@ echo $CORE_REPO_DIR
 
 BASE_VOLUMES="-v $CORE_REPO_DIR/ue4-supervisely:/safariland"
 # TODO: make this next line portable
-DATASET_VOLUMES="-v /Users/forensicarchitecture/datasets/safariland:/datasets"
+DATASET_VOLUMES="-v /Users/forensicarchitecture/datasets:/datasets"
 JUPYTER_PORT="8888"
 JUPYTER_LAB_PORT="8889"
 DOCKER_IMAGE_NAME="proj_safariland"

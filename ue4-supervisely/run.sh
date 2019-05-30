@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
 BASE_PATH=/datasets/synthetic-datasets/Triple-Chaser
-folders=( "2019.04.15-FA-002" "2019.04.20-FA-003" "2019.04.23-FA-004" "2019.04.24-FA-001" "2019.04.25-FA-003" "2019.05.02-FA-002" )
 
-
-for FOLD in "${folders[@]}"
+for FOLD in 2019.04.24-FA-001 2019.04.25-FA-003 2019.05.02-FA-002
 do
 	INPATH="$BASE_PATH/$FOLD"
 	OUTPATH="$INPATH/supervisely"
