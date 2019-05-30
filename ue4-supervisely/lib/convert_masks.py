@@ -132,17 +132,17 @@ def gen_and_save_anns(
         print(f"Inferred and saved annotation: {ann_path}")
 
     # copy original images over
-    convert_util.copy_folder(f"{INPATH}/img", OUT_IMG_PATH)
+    convert_util.copy_folder(f"{inpath}/img", OUT_IMG_PATH)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--in", help="path to input folder")
-    parser.add_argument("--out", help="path to output folder")
+    parser.add_argument("--infolder", help="path to input folder")
+    parser.add_argument("--outfolder", help="path to output folder")
     parser.add_argument("--name", help="name for the generated dataset")
     parser.add_argument("--label", help="the name of the label to attach to generated masks")
 
     args = parser.parse_args()
 
-    gen_and_save_anns(args.in, args.out, args.name, args.label)
+    gen_and_save_anns(args.infolder, args.outfolder, args.name, args.label)
