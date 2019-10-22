@@ -21,7 +21,8 @@ RUN apt-get update && \
     vim \
     zip \
     lsof \
-    tmux
+    tmux \
+	rename
 
 RUN apt update && \
     apt install net-tools
