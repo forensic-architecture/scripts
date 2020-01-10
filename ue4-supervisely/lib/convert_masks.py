@@ -120,14 +120,14 @@ def gen_and_save_anns(
     ann_paths = [
         f
         for f in listdir(IN_ANN_PATH)
-        if isfile(join(IN_ANN_PATH, f)) and f.endswith(".png")
+        if isfile(join(IN_ANN_PATH, f)) and (f.endswith(".png") or f.endswith(".jpg"))
     ]
 
     for ann_path in ann_paths:
         print(f"Calculating {ann_path}...")
         obj = infer_anns(f"{IN_ANN_PATH}/{ann_path}")
         utils.save_as_ann(
-            f"{OUT_ANN_PATH}/{ann_path.replace('.png', '')}.json", obj, class_title
+            f"{OUT_ANN_PATH}/{ann_path.replace('.png', '').replace('.jpg', '')}.json", obj, class_title
         )
         print(f"Inferred and saved annotation: {ann_path}")
 

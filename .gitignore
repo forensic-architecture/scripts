@@ -1,6 +1,7 @@
 .DS_Store
 .mayaSwatches/
 *.secret.py
+*.ipynb_checkpoints
 
 # Python files
 # ------------
