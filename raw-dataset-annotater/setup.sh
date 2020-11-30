@@ -1,5 +1,5 @@
-#run `source setup.sh` in bash or zsh (no fish support) to setup this directory
-#with the appropriate docker file.
+# run `source setup.sh` in bash or zsh (in fish run `bash setup.sh`) to setup
+# this directory with the appropriate docker file.
 
 # Get the current dir.
 if [ -n "$BASH_VERSION" ]; then
@@ -7,17 +7,16 @@ if [ -n "$BASH_VERSION" ]; then
 elif [ -n "$ZSH_VERSION" ]; then
 	DIR="$(dirname ${(%):-%N})"
 else
-	echo "Error: Unknown shell; cannot determine path to merantix/radler local repository"
+	echo "Error: Unknown shell; cannot determine path to forensic-architecture/scripts local repository"
 fi
-CORE_REPO_DIR="$(dirname $DIR)"
-echo $CORE_REPO_DIR
 
-BASE_VOLUMES="-v $CORE_REPO_DIR/ue4-supervisely:/safariland"
+CORE_REPO_DIR="$(dirname $DIR)"
+BASE_VOLUMES="-v $CORE_REPO_DIR/raw-dataset-annotater:/synthetic"
 # TODO: make this next line portable
-DATASET_VOLUMES="-v /home/fa-researcher/datasets:/datasets"
+DATASET_VOLUMES="-v /sata/datasets:/datasets"
 JUPYTER_PORT="8888"
 JUPYTER_LAB_PORT="8889"
-DOCKER_IMAGE_NAME="proj_safariland"
+DOCKER_IMAGE_NAME="synthetic_conversion"
 
 # if the image doesn't exist, build during setup
 IMAGE_EXISTS=`docker images | grep "$DOCKER_IMAGE_NAME"`

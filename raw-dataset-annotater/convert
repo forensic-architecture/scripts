@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+echo "Enter the folder name of your dataset (must be in /datasets): "
+read DATASET_NAME
+echo "Enter the label to give for your converted objects: "
+read LABEL
+
+BASE_PATH=/datasets/$DATASET_NAME
+CONVERTER=supervisely
+
+echo "Converting raw images to annotated dataset..."
+for INPATH in $(find $BASE_PATH -maxdepth 1 -mindepth 1 -type d)
+do
+	OUTPATH="$INPATH/$CONVERTER"
+
+	# NOTE: this line is only necessary if working straight from unreal or unity exports.
+	# python lib/reorder.py --folder "$INPATH" --format "$FORMAT"
+	python $CONVERTER/convert_masks.py \
+		--infolder "$INPATH" \
+		--outfolder "$OUTPATH" \
+		--name "$DATASET_NAME" \
+		--label "$LABEL"
+done

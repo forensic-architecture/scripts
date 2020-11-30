@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 mkdir $2
 mkdir $2/raw_ann
 mkdir $2/img

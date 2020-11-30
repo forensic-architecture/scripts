@@ -25,22 +25,22 @@ def reorder_unity(fname):
     imgs = [f for f in listdir(fname) if isfile(join(fname, f)) and f not in bl]
     masks_dir = join(fname, '_masks')
     masks = listdir(masks_dir)
-    
+
     img_folder = join(fname, 'img')
     raw_ann_folder = join(fname, 'raw_ann')
     try:
         mkdir(img_folder)
         mkdir(raw_ann_folder)
-    except: 
+    except:
         pass
-    
+
     for f in imgs:
         shutil.move(join(fname, f), join(img_folder, f))
-        
+
     for f in listdir(join(fname, '_masks')):
         newname = re.search(r'(.+)\_mask', f).group(1)
         shutil.move(join(masks_dir, f), f"{join(raw_ann_folder, newname)}.jpg")
-        
+
     try:
         rmdir(masks_dir)
     except:

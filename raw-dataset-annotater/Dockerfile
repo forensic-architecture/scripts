@@ -11,30 +11,19 @@ RUN apt-get update \
 RUN apt-get update && \
     apt-get install -y \
     build-essential \
+	libxext-dev \
     libsm6 \
     libxrender1 \
     libfontconfig1 \
-    wget \
-    curl \
-    git \
-    htop \
-    vim \
-    zip \
-    lsof \
-    tmux \
-	rename
-
-RUN apt update && \
-    apt install net-tools
+    net-tools
 
 # install pip packages
 ARG requirements_file=docker.requirements.txt
 COPY $requirements_file /requirements.txt
 RUN pip install --upgrade pip && \
-    pip install -r /requirements.txt \
-    && rm -r ~/.cache/pip
+    pip install -r /requirements.txt
 
-COPY . /safariland
-WORKDIR /safariland
+COPY . /synthetic
+WORKDIR /synthetic
 
-CMD ["/bin/bash"]
+CMD ["/bin/bash", "./convert"]
