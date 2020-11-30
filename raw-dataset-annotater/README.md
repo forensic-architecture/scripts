@@ -37,14 +37,17 @@ The original image should be in the 'img' folder, and the mask should be a file
 of the same name in the 'raw_ann' folder.
 
 Once you have confirmed that the folder is organised correctly, adjust the
-variables that are templated in `run.sh` for input and output paths
-appropriately. Then, inside the docker container (entered via the command
-above), run: 
+variables that are templated in `run_annotater`. In particular, make sure that
+the `DATASET_VOLUMES` is appropriate to where datasets are stored on your local
+disk.
+
+Once this is in order, run:
 ```
-sh run.sh
+./run_annotater
 ```
 
-This will convert the masks that UE4 produces to [Supervisely's annotation
-format](https://docs.supervise.ly/import/local_files/supervisely/). See the
-variables that are templated inside `run.sh` and adjust accordingly for
-different input and output paths, dataset names, and label names.
+This will build a Docker container with all the required dependencies and run
+the conversion scripts. Note that once the container is built, it will prompt
+you for the folder name where your images are, and the label you want to give.
+
+The scripts are currently hardcoded to produce [Supervisely's annotation format](https://docs.supervise.ly/import/local_files/supervisely/), but the structure is set up to provide alternative formats in the future.
