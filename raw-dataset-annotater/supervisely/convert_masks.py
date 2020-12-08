@@ -83,9 +83,7 @@ def infer_anns(img_path):
     return {"size": {"height": height, "width": width}, "anns": anns}
 
 
-def gen_and_save_anns(
-    inpath, outpath, dataset_name, class_title, ann_format=AnnFormat.SUPERVISELY
-):
+def gen_and_save_anns(args):
     """Generate annotations from UE4 exports, saving at the specified path.
 
     This function is currently tightly coupled to the Supervisely format, but
@@ -98,24 +96,24 @@ def gen_and_save_anns(
     switcher = {AnnFormat.SUPERVISELY: supervisely_util}
     # NOTE: add other ann formats if necessary by adding a 'util' module with
     # the same interface as supervisely_util.
-    utils = switcher.get(ann_format)
+    utils = switcher.get(AnnFormat.SUPERVISELY)
     if utils is None:
         raise Exception("You need to pass a valid annotation format.")
 
-    OUT_ANN_PATH = f"{outpath}/{dataset_name}/ann"
-    OUT_IMG_PATH = f"{outpath}/{dataset_name}/img"
+    OUT_ANN_PATH = f"{args.outfolder}/{args.name}/ann"
+    OUT_IMG_PATH = f"{args.outfolder}/{args.name}/img"
     # make necessary folders
     if not os.path.exists(OUT_ANN_PATH):
         os.makedirs(OUT_ANN_PATH)
 
     # meta.json describes the datasets at the top level
-    utils.save_meta(class_title, outpath)
+    utils.save_meta(args.label, args.outfolder)
 
-    # annotations are calculated from a 'raw_ann' folder in 'inpath', and are
-    # saved in OUT_ANN_PATH
-    IN_ANN_PATH = f"{inpath}/raw_ann"
+    IN_ANN_PATH = f"{args.infolder}/{args.imagefoldername}"
     if not os.path.isdir(IN_ANN_PATH):
-        raise Exception('A directory "raw_ann" needs to exist in the directory.')
+        raise Exception(
+            'A directory "{args.imagefoldername}" needs to exist in the directory.'
+        )
 
     ann_paths = [
         f
@@ -124,15 +122,17 @@ def gen_and_save_anns(
     ]
 
     for ann_path in ann_paths:
-        print(f"Calculating {ann_path}...")
+        print(f"Calculating {IN_ANN_PATH}/{ann_path}...")
         obj = infer_anns(f"{IN_ANN_PATH}/{ann_path}")
         utils.save_as_ann(
-            f"{OUT_ANN_PATH}/{ann_path.replace('.png', '').replace('.jpg', '')}.json", obj, class_title
+            f"{OUT_ANN_PATH}/{ann_path.replace('.png', '').replace('.jpg', '')}.json",
+            obj,
+            args.label,
         )
         print(f"Inferred and saved annotation: {ann_path}")
 
     # copy original images over
-    convert_util.copy_folder(f"{inpath}/img", OUT_IMG_PATH)
+    convert_util.copy_folder(f"{args.infolder}/{args.imagefoldername}", OUT_IMG_PATH)
 
 
 if __name__ == "__main__":
@@ -141,8 +141,20 @@ if __name__ == "__main__":
     parser.add_argument("--infolder", help="path to input folder")
     parser.add_argument("--outfolder", help="path to output folder")
     parser.add_argument("--name", help="name for the generated dataset")
-    parser.add_argument("--label", help="the name of the label to attach to generated masks")
+    parser.add_argument(
+        "--label", help="the name of the label to attach to generated masks"
+    )
+    parser.add_argument(
+        "--imagefoldername",
+        nargs="?",
+        default="X",
+        help="the name of the nested folder with the actual images",
+    )
+    parser.add_argument(
+        "--maskfoldername",
+        nargs="?",
+        default="Y",
+        help="the name of the nested folder with the masks",
+    )
 
-    args = parser.parse_args()
-
-    gen_and_save_anns(args.infolder, args.outfolder, args.name, args.label)
+    gen_and_save_anns(parser.parse_args())

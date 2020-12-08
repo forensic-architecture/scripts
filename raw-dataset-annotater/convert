@@ -5,6 +5,10 @@ read DATASET_NAME
 echo "Enter the label to give for your converted objects: "
 read LABEL
 
+# ------------------------------
+# RAW ANNOTATIONS TO SUPERVISELY
+# ------------------------------
+
 BASE_PATH=/datasets/$DATASET_NAME
 CONVERTER=supervisely
 
@@ -21,3 +25,9 @@ do
 		--name "$DATASET_NAME" \
 		--label "$LABEL"
 done
+
+# -------------------------
+# SUPERVISELY TO PASCAL VOC
+# -------------------------
+
+
