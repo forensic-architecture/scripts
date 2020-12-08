@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # run `source setup.sh` in bash or zsh (in fish run `bash setup.sh`) to setup
 # this directory with the appropriate docker file.
 

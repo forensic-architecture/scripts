@@ -2,7 +2,41 @@ mod sly;
 use crate::sly::sly_create_meta;
 
 use std::env;
+use std::error::Error;
+use std::fmt;
 use std::fs;
+use std::io;
+
+#[derive(Debug)]
+pub struct GeneralError {
+    pub msg: String,
+}
+
+impl GeneralError {
+    fn new(msg: &str) -> GeneralError {
+        GeneralError {
+            msg: msg.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for GeneralError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.msg)
+    }
+}
+
+impl From<io::Error> for GeneralError {
+    fn from(err: io::Error) -> GeneralError {
+        GeneralError::new(&err.to_string())
+    }
+}
+
+impl Error for GeneralError {
+    fn description(&self) -> &str {
+        &self.msg
+    }
+}
 
 #[derive(Debug)]
 pub struct Config {
@@ -49,7 +83,11 @@ impl Config {
     }
 }
 
-pub fn gen_anns(cfg: &Config) -> () {
+fn exists(pth: &String) -> bool {
+    fs::metadata(pth).is_ok()
+}
+
+pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
     println!("{:?}", cfg);
     println!("generating anns...");
 
@@ -58,6 +96,18 @@ pub fn gen_anns(cfg: &Config) -> () {
 
     fs::create_dir_all(ann_p);
     fs::create_dir_all(img_p);
-
     sly_create_meta(cfg.label.clone(), cfg.output_dir.clone());
+
+    let msk_p = format!("{}{}", cfg.input_dir, cfg.msk_dir);
+
+    if !exists(&msk_p) {
+        let err_msg = format!("Masks do not exist in: {}", msk_p);
+        return Err(GeneralError::new(&err_msg));
+    }
+
+    let ann_paths: Vec<_> = fs::read_dir(&msk_p)?
+        .map(|res| res.map(|e| e.path()))
+        .collect();
+
+    return Ok(());
 }

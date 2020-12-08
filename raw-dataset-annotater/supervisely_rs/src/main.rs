@@ -8,5 +8,12 @@ fn main() {
         process::exit(1);
     });
 
-    gen_anns(&cfg);
+    match gen_anns(&cfg) {
+        Ok(_) => (),
+        Err(ge) => {
+            eprintln!("Problem generating anns: {}", ge.msg);
+            // TODO: run cleanup on dirs etc?
+            process::exit(1);
+        }
+    }
 }
