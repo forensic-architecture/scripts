@@ -96,6 +96,7 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
 
     fs::create_dir_all(ann_p);
     fs::create_dir_all(img_p);
+
     sly_create_meta(cfg.label.clone(), cfg.output_dir.clone());
 
     let msk_p = format!("{}{}", cfg.input_dir, cfg.msk_dir);
@@ -108,6 +109,13 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
     let ann_paths: Vec<_> = fs::read_dir(&msk_p)?
         .map(|res| res.map(|e| e.path()))
         .collect();
+
+    for ann_path in fs::read_dir(&msk_p)? {
+        let entry = ann_path?;
+        let path = entry.path();
+
+        println!("{:?}", path);
+    }
 
     return Ok(());
 }

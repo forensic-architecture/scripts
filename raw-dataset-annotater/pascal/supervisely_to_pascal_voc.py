@@ -88,7 +88,5 @@ def supervisely_to_pascal_voc():
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-
-
     supervisely_to_pascal_voc()
 
