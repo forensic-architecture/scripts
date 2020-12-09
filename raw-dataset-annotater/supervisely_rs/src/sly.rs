@@ -7,41 +7,43 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Meta {
+    classes: Vec<AnnMeta>,
+    tags_images: Vec<String>,
+    tags_objects: Vec<String>,
+}
+
+pub fn create_meta(label: String, output_dir: String) -> () {
+    let meta_p = format!("{}/meta.json", output_dir);
+    let meta = Meta {
+        classes: vec![
+            AnnType::Bitmap.new_meta(&label),
+            AnnType::Bbox.new_meta(&label),
+        ],
+        tags_images: vec![],
+        tags_objects: vec![],
+    };
+    fs::write(meta_p, to_string(&meta).unwrap()).expect("Couldn't write Supervisely meta.");
+}
+
+pub fn create_ann(in_p: &Path, out_p: &Path) -> () {
+    // println!("inpath: {}", in_p.to_str().unwrap());
+    // println!("outpath: {}", out_p.to_str().unwrap());
+    let _ = Anns::new(in_p);
+    ()
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AnnMeta {
+    title: String,
+    shape: String,
+    color: String,
+}
+
 enum AnnType {
     Bitmap,
     Bbox,
-}
-
-type Pixel = image::Rgba<u8>;
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Anns {
-    size: ImSize,
-    anns: HashMap<String, Ann>,
-}
-
-impl Anns {
-    fn new(h: u32, w: u32) -> Anns {
-        Anns {
-            size: ImSize {
-                height: h,
-                width: w,
-            },
-            anns: HashMap::new(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct BitmapAnn {
-    origin: [u32; 2],
-    data: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct Ann {
-    bbox: [[u32; 2]; 2],
-    bitmap: Option<BitmapAnn>,
 }
 
 impl AnnType {
@@ -59,37 +61,9 @@ impl AnnType {
             },
         }
     }
-
-    fn new_ann(&self, path: &Path) -> Result<Anns, String> {
-        let black_pixel = image::Rgba([0 as u8, 0, 0, 255]);
-        let img = image::open(path).unwrap();
-        let (h, w) = img.dimensions();
-        let mut store = Anns::new(h, w);
-        for (x, y, pixel) in img.pixels() {
-            if pixel == black_pixel {
-                continue;
-            };
-            let colour = pixel.to_str();
-            if let Entry::Occupied(cur_bbox) = store.anns.entry(colour.clone()) {
-                let ann = cur_bbox.into_mut();
-                println!("{:?}", ann.bbox);
-            } else {
-                store.anns.insert(
-                    colour,
-                    Ann {
-                        bbox: [[x, y], [x, y]],
-                        bitmap: None,
-                    },
-                );
-            }
-
-            println!("{:?}", pixel.to_str());
-            // println!("{}, {}", x, y);
-        }
-
-        Ok(Anns::new(h, w))
-    }
 }
+
+type Pixel = image::Rgba<u8>;
 
 trait PixelMethods {
     fn to_str(&self) -> String;
@@ -102,44 +76,68 @@ impl PixelMethods for Pixel {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct AnnMeta {
-    title: String,
-    shape: String,
-    color: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct ImSize {
     height: u32,
     width: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct SlyMeta {
-    classes: Vec<AnnMeta>,
-    tags_images: Vec<String>,
-    tags_objects: Vec<String>,
+pub struct Anns {
+    size: ImSize,
+    anns: HashMap<String, Ann>,
 }
 
-pub fn sly_create_meta(label: String, output_dir: String) -> () {
-    let meta_p = format!("{}/meta.json", output_dir);
-    let meta = SlyMeta {
-        classes: vec![
-            AnnType::Bitmap.new_meta(&label),
-            AnnType::Bbox.new_meta(&label),
-        ],
-        tags_images: vec![],
-        tags_objects: vec![],
-    };
-    fs::write(meta_p, to_string(&meta).unwrap()).expect("Couldn't write Supervisely meta.");
+impl Anns {
+    // `msk_p` is a path to a mask generated from a game engine. Each non-black colour in the image is
+    // taken to be a distinct annotation.
+    //
+    // For the time being, the assumption is that a `msk_p` only contains one label, which pertains to
+    // all annotations in the mask.
+    fn new(path: &Path) -> Anns {
+        let black_pixel = image::Rgba([0 as u8, 0, 0, 255]);
+        let img = image::open(path).unwrap();
+        let (h, w) = img.dimensions();
+        let mut anns: HashMap<String, Ann> = HashMap::new();
+        for (x, y, pixel) in img.pixels() {
+            if pixel == black_pixel {
+                continue;
+            };
+            let colour = pixel.to_str();
+            if let Entry::Occupied(cur_bbox) = anns.entry(colour.clone()) {
+                let ann = cur_bbox.into_mut();
+                println!("{:?}", ann.bbox);
+            } else {
+                anns.insert(
+                    colour,
+                    Ann {
+                        bbox: [[x, y], [x, y]],
+                        bitmap: None,
+                    },
+                );
+            }
+
+            println!("{:?}", pixel.to_str());
+            // println!("{}, {}", x, y);
+        }
+
+        Anns {
+            size: ImSize {
+                height: h,
+                width: w,
+            },
+            anns,
+        }
+    }
 }
 
-// `msk_p` is a path to a mask generated from a game engine. Each non-black colour in the image is
-// taken to be a distinct annotation.
-//
-// For the time being, the assumption is that a `msk_p` only contains one label, which pertains to
-// all annotations in the mask.
-pub fn infer_anns(msk_p: &Path) -> Anns {
-    println!("TODO: {:?}", msk_p);
-    AnnType::Bbox.new_ann(msk_p).unwrap()
+#[derive(Serialize, Deserialize, Debug)]
+struct BitmapAnn {
+    origin: [u32; 2],
+    data: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Ann {
+    bbox: [[u32; 2]; 2],
+    bitmap: Option<BitmapAnn>,
 }

@@ -1,11 +1,12 @@
 mod sly;
-use crate::sly::{infer_anns, sly_create_meta};
+use crate::sly::{create_ann, create_meta};
 
 use std::env;
 use std::error::Error;
 use std::fmt;
 use std::fs;
 use std::io;
+use std::path::Path;
 
 #[derive(Debug)]
 pub struct GeneralError {
@@ -94,10 +95,10 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
     let ann_p = format!("{}/{}/ann", cfg.output_dir, cfg.dataset_name);
     let img_p = format!("{}/{}/img", cfg.output_dir, cfg.dataset_name);
 
-    fs::create_dir_all(ann_p);
-    fs::create_dir_all(img_p);
+    fs::create_dir_all(ann_p)?;
+    fs::create_dir_all(img_p)?;
 
-    sly_create_meta(cfg.label.clone(), cfg.output_dir.clone());
+    create_meta(cfg.label.clone(), cfg.output_dir.clone());
 
     let msk_p = format!("{}/{}", cfg.input_dir, cfg.msk_dir);
 
@@ -106,17 +107,21 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
         return Err(GeneralError::new(&err_msg));
     }
 
-    let msk_paths: Vec<_> = fs::read_dir(&msk_p)?
-        .map(|res| res.map(|e| e.path()))
-        .collect();
-
     // TODO: in parallel?
     for msk_path in fs::read_dir(&msk_p)? {
         let entry = msk_path?;
-        let pathbuf = entry.path();
+        let msk_p = entry.path();
 
-        println!("Calculating {}...", pathbuf.to_str().unwrap());
-        let ann = infer_anns(pathbuf.as_path());
+        println!("Calculating {}...", msk_p.to_str().unwrap());
+        let fname = msk_p
+            .file_name()
+            .unwrap()
+            .to_str()
+            .ok_or_else(|| GeneralError::new("Couldn't calculate mask."))?
+            .to_string();
+        let ann_p = format!("{}/{}", cfg.output_dir, &fname);
+
+        create_ann(msk_p.as_path(), Path::new(&ann_p));
     }
 
     return Ok(());
