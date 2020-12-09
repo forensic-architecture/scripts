@@ -4,7 +4,6 @@ use serde::{Deserialize, Serialize};
 use std::cmp::{max, min};
 
 pub type Pos = [u32; 2];
-pub type Mask = Vec<Pos>;
 pub type Bbox = [Pos; 2];
 pub type Pixel = Rgba<u8>;
 
