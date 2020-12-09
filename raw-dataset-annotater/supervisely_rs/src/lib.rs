@@ -1,5 +1,5 @@
 mod sly;
-use crate::sly::{infer_sly_anns, sly_create_meta};
+use crate::sly::{infer_anns, sly_create_meta};
 
 use std::env;
 use std::error::Error;
@@ -99,7 +99,7 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
 
     sly_create_meta(cfg.label.clone(), cfg.output_dir.clone());
 
-    let msk_p = format!("{}{}", cfg.input_dir, cfg.msk_dir);
+    let msk_p = format!("{}/{}", cfg.input_dir, cfg.msk_dir);
 
     if !exists(&msk_p) {
         let err_msg = format!("Masks do not exist in: {}", msk_p);
@@ -116,7 +116,7 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
         let pathbuf = entry.path();
 
         println!("Calculating {}...", pathbuf.to_str().unwrap());
-        let ann = infer_sly_anns(pathbuf.as_path());
+        let ann = infer_anns(pathbuf.as_path());
     }
 
     return Ok(());
