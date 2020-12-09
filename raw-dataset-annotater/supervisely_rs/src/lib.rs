@@ -1,43 +1,12 @@
+mod errors;
+use crate::errors::*;
+
 mod sly;
 use crate::sly::{create_ann, create_meta};
 
 use std::env;
-use std::error::Error;
-use std::fmt;
 use std::fs;
-use std::io;
 use std::path::Path;
-
-#[derive(Debug)]
-pub struct GeneralError {
-    pub msg: String,
-}
-
-impl GeneralError {
-    fn new(msg: &str) -> GeneralError {
-        GeneralError {
-            msg: msg.to_string(),
-        }
-    }
-}
-
-impl fmt::Display for GeneralError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.msg)
-    }
-}
-
-impl From<io::Error> for GeneralError {
-    fn from(err: io::Error) -> GeneralError {
-        GeneralError::new(&err.to_string())
-    }
-}
-
-impl Error for GeneralError {
-    fn description(&self) -> &str {
-        &self.msg
-    }
-}
 
 #[derive(Debug)]
 pub struct Config {
@@ -114,14 +83,14 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
 
         println!("Calculating {}...", msk_p.to_str().unwrap());
         let fname = msk_p
-            .file_name()
+            .file_stem()
             .unwrap()
             .to_str()
             .ok_or_else(|| GeneralError::new("Couldn't calculate mask."))?
             .to_string();
-        let ann_p = format!("{}/{}", cfg.output_dir, &fname);
+        let ann_p = format!("{}/{}.json", cfg.output_dir, &fname);
 
-        create_ann(msk_p.as_path(), Path::new(&ann_p));
+        create_ann(msk_p.as_path(), Path::new(&ann_p), cfg.label.clone());
     }
 
     return Ok(());

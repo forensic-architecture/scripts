@@ -1,68 +1,17 @@
 extern crate image;
 use image::GenericImageView;
 use serde::{Deserialize, Serialize};
-use serde_json::to_string;
+use serde_json::to_string_pretty;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use std::rc::Rc;
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Meta {
-    classes: Vec<AnnMeta>,
-    tags_images: Vec<String>,
-    tags_objects: Vec<String>,
-}
-
-pub fn create_meta(label: String, output_dir: String) -> () {
-    let meta_p = format!("{}/meta.json", output_dir);
-    let meta = Meta {
-        classes: vec![
-            AnnType::Bitmap.new_meta(&label),
-            AnnType::Bbox.new_meta(&label),
-        ],
-        tags_images: vec![],
-        tags_objects: vec![],
-    };
-    fs::write(meta_p, to_string(&meta).unwrap()).expect("Couldn't write Supervisely meta.");
-}
-
-pub fn create_ann(in_p: &Path, out_p: &Path) -> () {
-    // println!("inpath: {}", in_p.to_str().unwrap());
-    // println!("outpath: {}", out_p.to_str().unwrap());
-    let _ = Anns::new(in_p);
-    ()
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AnnMeta {
-    title: String,
-    shape: String,
-    color: String,
-}
-
-enum AnnType {
-    Bitmap,
-    Bbox,
-}
-
-impl AnnType {
-    fn new_meta(&self, label: &String) -> AnnMeta {
-        match self {
-            AnnType::Bitmap => AnnMeta {
-                title: format!("{}_bitmap", label),
-                shape: "bitmap".to_string(),
-                color: "#ae5311".to_string(),
-            },
-            AnnType::Bbox => AnnMeta {
-                title: format!("{}_bbox", label),
-                shape: "rectangle".to_string(),
-                color: "8faa12".to_string(),
-            },
-        }
-    }
-}
-
+// ---- UTIL -------
+type Pos = [u32; 2];
+type Mask = Vec<Pos>;
+type Bbox = [Pos; 2];
 type Pixel = image::Rgba<u8>;
 
 trait PixelMethods {
@@ -75,26 +24,68 @@ impl PixelMethods for Pixel {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ImSize {
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct ImSize {
     height: u32,
     width: u32,
 }
 
-struct AnnRepr {
-    pixels: Vec<[u32; 2]>,
-    tr_pt: [u32; 2],
-    bl_pt: [u32; 2],
-}
-
-fn too_tiny(pxls: &Vec<[u32; 2]>, size: &ImSize) -> bool {
+fn too_tiny(pxls: &Mask, size: &ImSize) -> bool {
     let msk = pxls.len() as f64;
     let img = (size.width * size.height) as f64;
-    (msk / img) > 0.002
+    (msk / img) < 0.002
+}
+
+// TODO: actually infer the mask
+fn mask_as_b64(mask: &Mask, origin: &Pos) -> String {
+    "TODO".to_string()
+}
+
+// ---- META -------
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Meta {
+    classes: Vec<AnnMetaInner>,
+    tags_images: Vec<String>,
+    tags_objects: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Anns {
+pub struct AnnMetaInner {
+    title: String,
+    shape: String,
+    color: String,
+}
+
+enum AnnMeta {
+    Bitmap,
+    Bbox,
+}
+
+impl AnnMeta {
+    fn new(&self, label: &String) -> AnnMetaInner {
+        match self {
+            AnnMeta::Bitmap => AnnMetaInner {
+                title: format!("{}_bitmap", label),
+                shape: "bitmap".to_string(),
+                color: "#ae5311".to_string(),
+            },
+            AnnMeta::Bbox => AnnMetaInner {
+                title: format!("{}_bbox", label),
+                shape: "rectangle".to_string(),
+                color: "8faa12".to_string(),
+            },
+        }
+    }
+}
+
+struct AnnRepr {
+    pixels: Mask,
+    tr_pt: Pos,
+    bl_pt: Pos,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Anns {
     size: ImSize,
     anns: HashMap<String, Ann>,
 }
@@ -161,26 +152,115 @@ impl Anns {
                 colour,
                 Ann {
                     bbox: [ann.tr_pt, ann.bl_pt],
-                    bitmap: None,
+                    bitmap: Some(Bitmap {
+                        origin: ann.tr_pt,
+                        data: mask_as_b64(&ann.pixels, &ann.tr_pt),
+                    }),
                 },
             );
         }
 
         Anns {
             size,
-            anns: HashMap::new(),
+            anns: actual_anns,
         }
+    }
+
+    fn to_fullanns(&self, label: String) -> Vec<FullAnn> {
+        let mut out = vec![];
+        let label = Rc::new(label);
+        for (_, ann) in &self.anns {
+            out.push(FullAnn::new(ann.bitmap.clone(), None, (&label).to_string()));
+            out.push(FullAnn::new(None, Some(ann.bbox), (&label).to_string()));
+        }
+        out
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct BitmapAnn {
-    origin: [u32; 2],
+#[derive(Serialize, Deserialize, Debug, Clone)]
+struct Bitmap {
+    origin: Pos,
     data: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Ann {
-    bbox: [[u32; 2]; 2],
-    bitmap: Option<BitmapAnn>,
+    bbox: Bbox,
+    bitmap: Option<Bitmap>,
+}
+
+// ------ OUTER SLY ---------
+#[derive(Serialize, Deserialize, Debug)]
+struct Points {
+    exterior: Vec<Pos>,
+    interior: [u32; 0],
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct FullAnn {
+    description: String,
+    bitmap: Option<Bitmap>,
+    tags: Vec<String>,
+    classTitle: String,
+    points: Points,
+}
+
+impl FullAnn {
+    fn new(bitmap: Option<Bitmap>, bbox: Option<Bbox>, label: String) -> FullAnn {
+        let suffix = match bitmap {
+            None => String::from("bitmap"),
+            _ => String::from("bbox"),
+        };
+
+        let exterior = match bbox {
+            Some(b) => b.to_vec(),
+            None => vec![],
+        };
+
+        FullAnn {
+            description: String::from(""),
+            bitmap,
+            tags: vec![],
+            classTitle: format!("{}_{}", label, suffix),
+            points: Points {
+                exterior,
+                interior: [],
+            },
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct FullAnns {
+    tags: Vec<String>,
+    description: String,
+    objects: Vec<FullAnn>,
+    size: ImSize,
+}
+
+// ------ CREATE FUNCS ---------
+pub fn create_meta(label: String, output_dir: String) -> () {
+    let meta_p = format!("{}/meta.json", output_dir);
+    let meta = Meta {
+        classes: vec![AnnMeta::Bitmap.new(&label), AnnMeta::Bbox.new(&label)],
+        tags_images: vec![],
+        tags_objects: vec![],
+    };
+    fs::write(meta_p, to_string_pretty(&meta).unwrap()).expect("Couldn't write Supervisely meta.");
+}
+
+pub fn create_ann(in_p: &Path, out_p: &Path, label: String) -> () {
+    let anns = Anns::new(&in_p);
+    let anns = &anns;
+    println!("Writing to {}", out_p.to_str().unwrap());
+
+    let full_anns = FullAnns {
+        tags: vec![String::from("train")],
+        description: String::from(""),
+        objects: anns.to_fullanns(label),
+        size: anns.size.clone(),
+    };
+
+    fs::write(out_p, to_string_pretty(&full_anns).unwrap())
+        .expect("Couldn't write Supervisely anns.");
 }
