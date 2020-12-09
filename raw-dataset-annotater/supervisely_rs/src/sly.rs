@@ -97,35 +97,29 @@ impl Anns {
         let black_pixel = image::Rgba([0 as u8, 0, 0, 255]);
         let img = image::open(path).unwrap();
         let (h, w) = img.dimensions();
-        let mut anns: HashMap<String, Ann> = HashMap::new();
+        let mut anns: HashMap<String, Vec<[u32; 2]>> = HashMap::new();
         for (x, y, pixel) in img.pixels() {
             if pixel == black_pixel {
                 continue;
             };
             let colour = pixel.to_str();
-            if let Entry::Occupied(cur_bbox) = anns.entry(colour.clone()) {
-                let ann = cur_bbox.into_mut();
-                println!("{:?}", ann.bbox);
+            if let Entry::Occupied(ann_colour) = anns.entry(colour.clone()) {
+                let ann = ann_colour.into_mut();
+                ann.push([x, y]);
             } else {
-                anns.insert(
-                    colour,
-                    Ann {
-                        bbox: [[x, y], [x, y]],
-                        bitmap: None,
-                    },
-                );
+                anns.insert(colour, vec![[x, y]]);
             }
-
-            println!("{:?}", pixel.to_str());
-            // println!("{}, {}", x, y);
         }
+
+        let actual_anns: HashMap<String, Ann> = HashMap::new();
+        for (col, pxls) in anns {}
 
         Anns {
             size: ImSize {
                 height: h,
                 width: w,
             },
-            anns,
+            anns: HashMap::new(),
         }
     }
 }
