@@ -16,4 +16,6 @@ fn main() {
             process::exit(1);
         }
     }
+
+    copy_imgs(&cfg);
 }

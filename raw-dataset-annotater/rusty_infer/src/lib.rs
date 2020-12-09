@@ -1,5 +1,6 @@
 mod errors;
-use crate::errors::*;
+mod util;
+use crate::errors::GeneralError;
 
 mod sly;
 use crate::sly::{create_ann, create_meta};
@@ -58,9 +59,6 @@ fn exists(pth: &String) -> bool {
 }
 
 pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
-    println!("{:?}", cfg);
-    println!("generating anns...");
-
     let ann_p = format!("{}/{}/ann", cfg.output_dir, cfg.dataset_name);
     let img_p = format!("{}/{}/img", cfg.output_dir, cfg.dataset_name);
 
@@ -88,10 +86,25 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
             .to_str()
             .ok_or_else(|| GeneralError::new("Couldn't calculate mask."))?
             .to_string();
-        let ann_p = format!("{}/{}.json", cfg.output_dir, &fname);
+        let ann_p = format!(
+            "{}/{}/ann/{}.jpg.json",
+            cfg.output_dir, cfg.dataset_name, &fname
+        );
 
         create_ann(msk_p.as_path(), Path::new(&ann_p), cfg.label.clone());
     }
 
     return Ok(());
+}
+
+pub fn copy_imgs(cfg: &Config) -> () {
+    let img_p = format!("{}/{}", cfg.input_dir, cfg.img_dir);
+    let new_img_p = format!("{}/{}/img", cfg.output_dir, cfg.dataset_name);
+    let cmd = format!("cp -r {}/*.jpg {}/", img_p, new_img_p);
+    println!("{}", cmd);
+    std::process::Command::new("sh")
+        .arg("-c")
+        .arg(cmd)
+        .output()
+        .expect("failed to copy images over");
 }

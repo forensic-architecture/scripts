@@ -1,5 +1,6 @@
 extern crate image;
-use image::GenericImageView;
+use crate::util::*;
+use image::{GenericImageView, Rgba};
 use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 use std::collections::hash_map::Entry;
@@ -7,39 +8,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 use std::rc::Rc;
-
-// ---- UTIL -------
-type Pos = [u32; 2];
-type Mask = Vec<Pos>;
-type Bbox = [Pos; 2];
-type Pixel = image::Rgba<u8>;
-
-trait PixelMethods {
-    fn to_str(&self) -> String;
-}
-
-impl PixelMethods for Pixel {
-    fn to_str(&self) -> String {
-        format!("{},{},{}", self[0], self[1], self[2])
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-struct ImSize {
-    height: u32,
-    width: u32,
-}
-
-fn too_tiny(pxls: &Mask, size: &ImSize) -> bool {
-    let msk = pxls.len() as f64;
-    let img = (size.width * size.height) as f64;
-    (msk / img) < 0.002
-}
-
-// TODO: actually infer the mask
-fn mask_as_b64(mask: &Mask, origin: &Pos) -> String {
-    "TODO".to_string()
-}
 
 // ---- META -------
 #[derive(Serialize, Deserialize, Debug)]
@@ -78,12 +46,6 @@ impl AnnMeta {
     }
 }
 
-struct AnnRepr {
-    pixels: Mask,
-    tr_pt: Pos,
-    bl_pt: Pos,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 struct Anns {
     size: ImSize,
@@ -97,10 +59,10 @@ impl Anns {
     // For the time being, the assumption is that a `msk_p` only contains one label, which pertains to
     // all annotations in the mask.
     fn new(path: &Path) -> Anns {
-        let black_pixel = image::Rgba([0 as u8, 0, 0, 255]);
-        let img = image::open(path).unwrap();
+        let black_pixel = Rgba([0 as u8, 0, 0, 255]);
+        let mut img = image::open(path).unwrap();
         let (h, w) = img.dimensions();
-        let mut anns: HashMap<String, AnnRepr> = HashMap::new();
+        let mut anns: HashMap<String, Bbox> = HashMap::new();
         for (x, y, pixel) in img.pixels() {
             if pixel == black_pixel {
                 continue;
@@ -109,32 +71,23 @@ impl Anns {
             if let Entry::Occupied(ann_colour) = anns.entry(colour.clone()) {
                 let ann = ann_colour.into_mut();
 
-                ann.pixels.push([x, y]);
-
-                // update tr_pt
-                if x < ann.tr_pt[0] {
-                    ann.tr_pt[0] = x;
+                // update top right point
+                if x < ann[0][0] {
+                    ann[0][0] = x;
                 }
-                if y < ann.tr_pt[1] {
-                    ann.tr_pt[1] = y;
+                if y < ann[0][1] {
+                    ann[0][1] = y;
                 }
 
-                // update bl_pt
-                if x > ann.bl_pt[0] {
-                    ann.bl_pt[0] = x;
+                // update bottom left point
+                if x > ann[1][0] {
+                    ann[1][0] = x;
                 }
-                if y > ann.bl_pt[1] {
-                    ann.bl_pt[1] = y;
+                if y > ann[1][1] {
+                    ann[1][1] = y;
                 }
             } else {
-                anns.insert(
-                    colour,
-                    AnnRepr {
-                        pixels: vec![[x, y]],
-                        tr_pt: [x, y],
-                        bl_pt: [x, y],
-                    },
-                );
+                anns.insert(colour, [[x, y], [x, y]]);
             }
         }
 
@@ -145,16 +98,16 @@ impl Anns {
 
         let mut actual_anns: HashMap<String, Ann> = HashMap::new();
         for (colour, ann) in anns {
-            if too_tiny(&ann.pixels, &size) {
+            if too_tiny(ann, &size) {
                 continue;
             }
             actual_anns.insert(
                 colour,
                 Ann {
-                    bbox: [ann.tr_pt, ann.bl_pt],
+                    bbox: [ann[0], ann[1]],
                     bitmap: Some(Bitmap {
-                        origin: ann.tr_pt,
-                        data: mask_as_b64(&ann.pixels, &ann.tr_pt),
+                        origin: ann[0],
+                        data: crop_b64(&mut img, ann),
                     }),
                 },
             );
