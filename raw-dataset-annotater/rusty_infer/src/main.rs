@@ -1,6 +1,6 @@
+use rusty_infer::*;
 use std::env;
 use std::process;
-use supervisely_rs::*;
 
 fn main() {
     let cfg = Config::new(env::args()).unwrap_or_else(|err| {
