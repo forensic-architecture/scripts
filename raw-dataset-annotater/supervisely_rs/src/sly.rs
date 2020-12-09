@@ -81,6 +81,18 @@ pub struct ImSize {
     width: u32,
 }
 
+struct AnnRepr {
+    pixels: Vec<[u32; 2]>,
+    tr_pt: [u32; 2],
+    bl_pt: [u32; 2],
+}
+
+fn too_tiny(pxls: &Vec<[u32; 2]>, size: &ImSize) -> bool {
+    let msk = pxls.len() as f64;
+    let img = (size.width * size.height) as f64;
+    (msk / img) > 0.002
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Anns {
     size: ImSize,
@@ -97,7 +109,7 @@ impl Anns {
         let black_pixel = image::Rgba([0 as u8, 0, 0, 255]);
         let img = image::open(path).unwrap();
         let (h, w) = img.dimensions();
-        let mut anns: HashMap<String, Vec<[u32; 2]>> = HashMap::new();
+        let mut anns: HashMap<String, AnnRepr> = HashMap::new();
         for (x, y, pixel) in img.pixels() {
             if pixel == black_pixel {
                 continue;
@@ -105,20 +117,57 @@ impl Anns {
             let colour = pixel.to_str();
             if let Entry::Occupied(ann_colour) = anns.entry(colour.clone()) {
                 let ann = ann_colour.into_mut();
-                ann.push([x, y]);
+
+                ann.pixels.push([x, y]);
+
+                // update tr_pt
+                if x < ann.tr_pt[0] {
+                    ann.tr_pt[0] = x;
+                }
+                if y < ann.tr_pt[1] {
+                    ann.tr_pt[1] = y;
+                }
+
+                // update bl_pt
+                if x > ann.bl_pt[0] {
+                    ann.bl_pt[0] = x;
+                }
+                if y > ann.bl_pt[1] {
+                    ann.bl_pt[1] = y;
+                }
             } else {
-                anns.insert(colour, vec![[x, y]]);
+                anns.insert(
+                    colour,
+                    AnnRepr {
+                        pixels: vec![[x, y]],
+                        tr_pt: [x, y],
+                        bl_pt: [x, y],
+                    },
+                );
             }
         }
 
-        let actual_anns: HashMap<String, Ann> = HashMap::new();
-        for (col, pxls) in anns {}
+        let size = ImSize {
+            height: h,
+            width: w,
+        };
+
+        let mut actual_anns: HashMap<String, Ann> = HashMap::new();
+        for (colour, ann) in anns {
+            if too_tiny(&ann.pixels, &size) {
+                continue;
+            }
+            actual_anns.insert(
+                colour,
+                Ann {
+                    bbox: [ann.tr_pt, ann.bl_pt],
+                    bitmap: None,
+                },
+            );
+        }
 
         Anns {
-            size: ImSize {
-                height: h,
-                width: w,
-            },
+            size,
             anns: HashMap::new(),
         }
     }
