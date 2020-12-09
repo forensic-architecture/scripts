@@ -1,5 +1,5 @@
 mod sly;
-use crate::sly::sly_create_meta;
+use crate::sly::{infer_sly_anns, sly_create_meta};
 
 use std::env;
 use std::error::Error;
@@ -106,15 +106,17 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
         return Err(GeneralError::new(&err_msg));
     }
 
-    let ann_paths: Vec<_> = fs::read_dir(&msk_p)?
+    let msk_paths: Vec<_> = fs::read_dir(&msk_p)?
         .map(|res| res.map(|e| e.path()))
         .collect();
 
-    for ann_path in fs::read_dir(&msk_p)? {
-        let entry = ann_path?;
-        let path = entry.path();
+    // TODO: in parallel?
+    for msk_path in fs::read_dir(&msk_p)? {
+        let entry = msk_path?;
+        let pathbuf = entry.path();
 
-        println!("{:?}", path);
+        println!("Calculating {}...", pathbuf.to_str().unwrap());
+        let ann = infer_sly_anns(pathbuf.as_path());
     }
 
     return Ok(());
