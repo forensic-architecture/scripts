@@ -2,6 +2,7 @@ extern crate image;
 use image::GenericImageView;
 use serde::{Deserialize, Serialize};
 use serde_json::to_string;
+use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -9,6 +10,38 @@ use std::path::Path;
 enum AnnType {
     Bitmap,
     Bbox,
+}
+
+type Pixel = image::Rgba<u8>;
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Anns {
+    size: ImSize,
+    anns: HashMap<String, Ann>,
+}
+
+impl Anns {
+    fn new(h: u32, w: u32) -> Anns {
+        Anns {
+            size: ImSize {
+                height: h,
+                width: w,
+            },
+            anns: HashMap::new(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct BitmapAnn {
+    origin: [u32; 2],
+    data: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Ann {
+    bbox: [[u32; 2]; 2],
+    bitmap: Option<BitmapAnn>,
 }
 
 impl AnnType {
@@ -28,13 +61,43 @@ impl AnnType {
     }
 
     fn new_ann(&self, path: &Path) -> Result<Anns, String> {
+        let black_pixel = image::Rgba([0 as u8, 0, 0, 255]);
         let img = image::open(path).unwrap();
         let (h, w) = img.dimensions();
+        let mut store = Anns::new(h, w);
         for (x, y, pixel) in img.pixels() {
-            println!("{}, {}", x, y);
+            if pixel == black_pixel {
+                continue;
+            };
+            let colour = pixel.to_str();
+            if let Entry::Occupied(cur_bbox) = store.anns.entry(colour.clone()) {
+                let ann = cur_bbox.into_mut();
+                println!("{:?}", ann.bbox);
+            } else {
+                store.anns.insert(
+                    colour,
+                    Ann {
+                        bbox: [[x, y], [x, y]],
+                        bitmap: None,
+                    },
+                );
+            }
+
+            println!("{:?}", pixel.to_str());
+            // println!("{}, {}", x, y);
         }
 
         Ok(Anns::new(h, w))
+    }
+}
+
+trait PixelMethods {
+    fn to_str(&self) -> String;
+}
+
+impl PixelMethods for Pixel {
+    fn to_str(&self) -> String {
+        format!("{},{},{}", self[0], self[1], self[2])
     }
 }
 
@@ -49,27 +112,6 @@ pub struct AnnMeta {
 pub struct ImSize {
     height: u32,
     width: u32,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Ann {}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Anns {
-    size: ImSize,
-    anns: HashMap<String, Ann>,
-}
-
-impl Anns {
-    fn new(h: u32, w: u32) -> Anns {
-        Anns {
-            size: ImSize {
-                height: h,
-                width: w,
-            },
-            anns: HashMap::new(),
-        }
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
