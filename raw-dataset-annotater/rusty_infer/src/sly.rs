@@ -1,4 +1,3 @@
-extern crate image;
 use crate::anns::{Anns, Bitmap};
 use crate::util::*;
 use serde::{Deserialize, Serialize};
