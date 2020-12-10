@@ -105,7 +105,7 @@ pub fn create_meta(label: &String, output_dir: &String) -> () {
 pub fn create_ann(in_p: &Path, out_p: &Path, label: &String) -> () {
     let anns = Anns::new(&in_p);
     let anns = &anns;
-    println!("Writing to {}", out_p.to_str().unwrap());
+    println!("Writing to {:?}", out_p);
 
     let sly_anns = SlyAnns {
         tags: vec![String::from("train")],

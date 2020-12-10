@@ -80,7 +80,7 @@ pub fn gen_anns(cfg: &Config) -> Result<(), Error> {
         let entry = msk_path?;
         let msk_p = entry.path();
 
-        println!("Calculating {}...", msk_p.to_str().unwrap());
+        println!("Calculating {:?}...", msk_p);
         let fname = msk_p
             .file_stem()
             .unwrap()
