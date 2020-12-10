@@ -1,7 +1,6 @@
 use crate::util::*;
 use image::{GenericImageView, Rgba};
 use serde::{Deserialize, Serialize};
-use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -38,26 +37,27 @@ impl Anns {
                 continue;
             };
             let colour = pixel.to_str();
-            if let Entry::Occupied(ann_colour) = anns.entry(colour.clone()) {
-                let ann = ann_colour.into_mut();
+            match anns.get_mut(&colour) {
+                Some(ann) => {
+                    // update top right point
+                    if x < ann[0][0] {
+                        ann[0][0] = x;
+                    }
+                    if y < ann[0][1] {
+                        ann[0][1] = y;
+                    }
 
-                // update top right point
-                if x < ann[0][0] {
-                    ann[0][0] = x;
+                    // update bottom left point
+                    if x > ann[1][0] {
+                        ann[1][0] = x;
+                    }
+                    if y > ann[1][1] {
+                        ann[1][1] = y;
+                    }
+                },
+                None => {
+                    anns.insert(colour, [[x, y], [x, y]]);
                 }
-                if y < ann[0][1] {
-                    ann[0][1] = y;
-                }
-
-                // update bottom left point
-                if x > ann[1][0] {
-                    ann[1][0] = x;
-                }
-                if y > ann[1][1] {
-                    ann[1][1] = y;
-                }
-            } else {
-                anns.insert(colour, [[x, y], [x, y]]);
             }
         }
 
