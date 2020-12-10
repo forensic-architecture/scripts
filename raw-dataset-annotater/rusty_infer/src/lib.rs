@@ -66,7 +66,7 @@ pub fn gen_anns(cfg: &Config) -> Result<(), Error> {
     fs::create_dir_all(ann_p)?;
     fs::create_dir_all(img_p)?;
 
-    create_meta(cfg.label.clone(), cfg.output_dir.clone());
+    create_meta(&cfg.label, &cfg.output_dir);
 
     let msk_p = format!("{}/{}", cfg.input_dir, cfg.msk_dir);
 
@@ -91,7 +91,7 @@ pub fn gen_anns(cfg: &Config) -> Result<(), Error> {
             cfg.output_dir, cfg.dataset_name, &fname
         );
 
-        create_ann(msk_p.as_path(), Path::new(&ann_p), cfg.label.clone());
+        create_ann(msk_p.as_path(), Path::new(&ann_p), &cfg.label);
     }
 
     return Ok(());
