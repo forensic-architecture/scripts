@@ -1,7 +1,7 @@
 mod anns;
 mod errors;
 mod util;
-use crate::errors::GeneralError;
+use crate::errors::Error;
 
 mod sly;
 use crate::sly::{create_ann, create_meta};
@@ -21,27 +21,27 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn new(mut args: env::Args) -> Result<Config, &'static str> {
+    pub fn new(mut args: env::Args) -> Result<Config, Error> {
         args.next(); // skip program name
 
         let input_dir = match args.next() {
             Some(a) => a,
-            None => return Err("No input directory provided."),
+            None => return Err(Error::from("No input directory provided.")),
         };
 
         let output_dir = match args.next() {
             Some(a) => a,
-            None => return Err("No output directory provided."),
+            None => return Err(Error::from("No output directory provided.")),
         };
 
         let dataset_name = match args.next() {
             Some(a) => a,
-            None => return Err("No dataset name provided."),
+            None => return Err(Error::from("No dataset name provided.")),
         };
 
         let label = match args.next() {
             Some(a) => a,
-            None => return Err("No label (for found objects) provided."),
+            None => return Err(Error::from("No label (for found objects) provided.")),
         };
 
         Ok(Config {
@@ -59,7 +59,7 @@ fn exists(pth: &String) -> bool {
     fs::metadata(pth).is_ok()
 }
 
-pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
+pub fn gen_anns(cfg: &Config) -> Result<(), Error> {
     let ann_p = format!("{}/{}/ann", cfg.output_dir, cfg.dataset_name);
     let img_p = format!("{}/{}/img", cfg.output_dir, cfg.dataset_name);
 
@@ -72,7 +72,7 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
 
     if !exists(&msk_p) {
         let err_msg = format!("Masks do not exist in: {}", msk_p);
-        return Err(GeneralError::new(&err_msg));
+        return Err(Error::General(err_msg));
     }
 
     // TODO: in parallel?
@@ -85,8 +85,7 @@ pub fn gen_anns(cfg: &Config) -> Result<(), GeneralError> {
             .file_stem()
             .unwrap()
             .to_str()
-            .ok_or_else(|| GeneralError::new("Couldn't calculate mask."))?
-            .to_string();
+            .ok_or("Couldn't calculate mask")?;
         let ann_p = format!(
             "{}/{}/ann/{}.jpg.json",
             cfg.output_dir, cfg.dataset_name, &fname
