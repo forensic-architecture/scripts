@@ -1,4 +1,3 @@
-extern crate base64;
 use image::{DynamicImage, Rgba};
 use serde::{Deserialize, Serialize};
 use std::cmp::{max, min};

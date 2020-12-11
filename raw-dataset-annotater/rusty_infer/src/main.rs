@@ -8,14 +8,11 @@ fn main() {
         process::exit(1);
     });
 
-    match gen_anns(&cfg) {
-        Ok(_) => (),
-        Err(ge) => {
-            eprintln!("Problem generating anns: {}", ge.msg);
-            // TODO: run cleanup on dirs etc?
-            process::exit(1);
-        }
-    }
+    gen_anns(&cfg).unwrap_or_else(|err| {
+        eprintln!("Problem generating anns: {}", err);
+        // TODO: run cleanup on dirs etc?
+        process::exit(1);
+    });
 
     copy_imgs(&cfg);
 }

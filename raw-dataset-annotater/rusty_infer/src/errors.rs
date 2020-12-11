@@ -1,34 +1,36 @@
-use std::error::Error;
-use std::fmt;
 use std::io;
+use std::fmt;
+use std::error;
 
 #[derive(Debug)]
-pub struct GeneralError {
-    pub msg: String,
+pub enum Error {
+    General(String)
 }
 
-impl GeneralError {
-    pub fn new(msg: &str) -> GeneralError {
-        GeneralError {
-            msg: msg.to_string(),
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Error::General(msg) => write!(f, "{}", msg)
         }
     }
 }
 
-impl fmt::Display for GeneralError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.msg)
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        Error::General(err.to_string())
     }
 }
 
-impl From<io::Error> for GeneralError {
-    fn from(err: io::Error) -> GeneralError {
-        GeneralError::new(&err.to_string())
+impl From<&str> for Error {
+    fn from(msg: &str) -> Error {
+        Error::General(msg.to_string())
     }
 }
 
-impl Error for GeneralError {
+impl error::Error for Error {
     fn description(&self) -> &str {
-        &self.msg
+        match self {
+            Error::General(msg) => msg
+        }
     }
 }

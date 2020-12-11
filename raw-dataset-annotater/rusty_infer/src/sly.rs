@@ -1,11 +1,9 @@
-extern crate image;
 use crate::anns::{Anns, Bitmap};
 use crate::util::*;
 use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
 use std::fs;
 use std::path::Path;
-use std::rc::Rc;
 
 // ---- META -------
 #[derive(Serialize, Deserialize, Debug)]
@@ -63,10 +61,10 @@ struct SlyAnn {
 }
 
 impl SlyAnn {
-    fn new(bitmap: Option<Bitmap>, bbox: Option<Bbox>, label: String) -> SlyAnn {
+    fn new(bitmap: Option<Bitmap>, bbox: Option<Bbox>, label: &String) -> SlyAnn {
         let suffix = match bitmap {
-            None => String::from("bitmap"),
-            _ => String::from("bbox"),
+            None => "bitmap",
+            _ => "bbox",
         };
 
         let exterior = match bbox {
@@ -94,7 +92,7 @@ struct SlyPoints {
 }
 
 // ------ CREATE FUNCS ---------
-pub fn create_meta(label: String, output_dir: String) -> () {
+pub fn create_meta(label: &String, output_dir: &String) -> () {
     let meta_p = format!("{}/meta.json", output_dir);
     let meta = SlyMeta {
         classes: vec![SlyAnnMeta::Bitmap.new(&label), SlyAnnMeta::Bbox.new(&label)],
@@ -104,15 +102,15 @@ pub fn create_meta(label: String, output_dir: String) -> () {
     fs::write(meta_p, to_string_pretty(&meta).unwrap()).expect("Couldn't write Supervisely meta.");
 }
 
-pub fn create_ann(in_p: &Path, out_p: &Path, label: String) -> () {
+pub fn create_ann(in_p: &Path, out_p: &Path, label: &String) -> () {
     let anns = Anns::new(&in_p);
     let anns = &anns;
-    println!("Writing to {}", out_p.to_str().unwrap());
+    println!("Writing to {:?}", out_p);
 
     let sly_anns = SlyAnns {
         tags: vec![String::from("train")],
         description: String::from(""),
-        objects: to_slyanns(&anns, label),
+        objects: to_slyanns(&anns, &label),
         size: anns.size.clone(),
     };
 
@@ -120,12 +118,11 @@ pub fn create_ann(in_p: &Path, out_p: &Path, label: String) -> () {
         .expect("Couldn't write Supervisely anns.");
 }
 
-fn to_slyanns(anns: &Anns, label: String) -> Vec<SlyAnn> {
+fn to_slyanns(anns: &Anns, label: &String) -> Vec<SlyAnn> {
     let mut out = vec![];
-    let label = Rc::new(label);
     for (_, ann) in &anns.anns {
-        out.push(SlyAnn::new(ann.bitmap.clone(), None, (&label).to_string()));
-        out.push(SlyAnn::new(None, Some(ann.bbox), (&label).to_string()));
+        out.push(SlyAnn::new(ann.bitmap.clone(), None, &label));
+        out.push(SlyAnn::new(None, Some(ann.bbox), &label));
     }
     out
 }
