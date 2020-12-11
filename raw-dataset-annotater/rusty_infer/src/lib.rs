@@ -69,7 +69,7 @@ pub fn gen_anns(cfg: &Config) -> Result<(), Error> {
 
     let dataset_root = Path::new(&cfg.output_dir);
 
-    // initialise all datasets
+    // TODO: initialise all datasets
     let ds = SlyDataset::new(&cfg.label, dataset_root);
 
     let msk_p = format!("{}/{}", cfg.input_dir, cfg.msk_dir);
@@ -101,6 +101,7 @@ pub fn gen_anns(cfg: &Config) -> Result<(), Error> {
         );
         let ann_p = Path::new(&ann_p);
 
+        // TODO: write all items
         ds.write_item(&anns, ann_p)?;
         println!("Item written to {:?}", ann_p);
     }

@@ -1,4 +1,4 @@
-use crate::anns::{AnnotatedDataset, Anns, Bitmap};
+use crate::anns::{Anns, Bitmap};
 use crate::errors::Error;
 use crate::util::*;
 use serde::{Deserialize, Serialize};
