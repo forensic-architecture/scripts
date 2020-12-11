@@ -1,10 +1,11 @@
 mod anns;
 mod errors;
 mod util;
+use crate::anns::Anns;
 use crate::errors::Error;
 
 mod sly;
-use crate::sly::{create_ann, create_meta};
+use crate::sly::SlyDataset;
 
 use std::env;
 use std::fs;
@@ -66,12 +67,15 @@ pub fn gen_anns(cfg: &Config) -> Result<(), Error> {
     fs::create_dir_all(ann_p)?;
     fs::create_dir_all(img_p)?;
 
-    create_meta(&cfg.label, &cfg.output_dir);
+    let dataset_root = Path::new(&cfg.output_dir);
+
+    // initialise all datasets
+    let ds = SlyDataset::new(&cfg.label, dataset_root);
 
     let msk_p = format!("{}/{}", cfg.input_dir, cfg.msk_dir);
 
     if !exists(&msk_p) {
-        let err_msg = format!("Masks do not exist in: {}", msk_p);
+        let err_msg = format!("Input masks do not exist in: {}", msk_p);
         return Err(Error::General(err_msg));
     }
 
@@ -80,18 +84,25 @@ pub fn gen_anns(cfg: &Config) -> Result<(), Error> {
         let entry = msk_path?;
         let msk_p = entry.path();
 
-        println!("Calculating {:?}...", msk_p);
+        println!("Reading mask from {:?}...", msk_p);
         let fname = msk_p
             .file_stem()
             .unwrap()
             .to_str()
             .ok_or("Couldn't calculate mask")?;
+
+        let msk_p = msk_p.as_path();
+        let anns = Anns::new(msk_p);
+        let anns = &anns;
+
         let ann_p = format!(
             "{}/{}/ann/{}.jpg.json",
             cfg.output_dir, cfg.dataset_name, &fname
         );
+        let ann_p = Path::new(&ann_p);
 
-        create_ann(msk_p.as_path(), Path::new(&ann_p), &cfg.label);
+        ds.write_item(&anns, ann_p)?;
+        println!("Item written to {:?}", ann_p);
     }
 
     return Ok(());
@@ -101,10 +112,10 @@ pub fn copy_imgs(cfg: &Config) -> () {
     let img_p = format!("{}/{}", cfg.input_dir, cfg.img_dir);
     let new_img_p = format!("{}/{}/img", cfg.output_dir, cfg.dataset_name);
     let cmd = format!("cp -r {}/*.jpg {}/", img_p, new_img_p);
-    println!("{}", cmd);
     std::process::Command::new("sh")
         .arg("-c")
         .arg(cmd)
         .output()
         .expect("failed to copy images over");
+    println!("Original images copied to {:?}.", new_img_p)
 }

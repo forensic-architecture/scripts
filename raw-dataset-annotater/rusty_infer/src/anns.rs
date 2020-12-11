@@ -1,8 +1,14 @@
+use crate::errors::Error;
 use crate::util::*;
 use image::{GenericImageView, Rgba};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
+
+pub trait AnnotatedDataset {
+    // fn new(label: &String, dataset_root: &Path) -> Self;
+    fn write_item(&self, anns: &Anns, mask: &Path) -> Result<(), Error>;
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Bitmap {
@@ -54,7 +60,7 @@ impl Anns {
                     if y > ann[1][1] {
                         ann[1][1] = y;
                     }
-                },
+                }
                 None => {
                     anns.insert(colour, [[x, y], [x, y]]);
                 }

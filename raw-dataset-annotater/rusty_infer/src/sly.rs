@@ -1,4 +1,5 @@
-use crate::anns::{Anns, Bitmap};
+use crate::anns::{AnnotatedDataset, Anns, Bitmap};
+use crate::errors::Error;
 use crate::util::*;
 use serde::{Deserialize, Serialize};
 use serde_json::to_string_pretty;
@@ -11,6 +12,16 @@ pub struct SlyMeta {
     classes: Vec<SlyAnnMetaInner>,
     tags_images: Vec<String>,
     tags_objects: Vec<String>,
+}
+
+impl From<&String> for SlyMeta {
+    fn from(label: &String) -> SlyMeta {
+        SlyMeta {
+            classes: vec![SlyAnnMeta::Bitmap.new(label), SlyAnnMeta::Bbox.new(label)],
+            tags_images: vec![],
+            tags_objects: vec![],
+        }
+    }
 }
 
 enum SlyAnnMeta {
@@ -83,6 +94,15 @@ impl SlyAnn {
             },
         }
     }
+
+    fn vec_from_anns(anns: &Anns, label: &String) -> Vec<SlyAnn> {
+        let mut out = vec![];
+        for (_, ann) in &anns.anns {
+            out.push(SlyAnn::new(ann.bitmap.clone(), None, &label));
+            out.push(SlyAnn::new(None, Some(ann.bbox), &label));
+        }
+        out
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -91,38 +111,38 @@ struct SlyPoints {
     interior: [u32; 0],
 }
 
-// ------ CREATE FUNCS ---------
-pub fn create_meta(label: &String, output_dir: &String) -> () {
-    let meta_p = format!("{}/meta.json", output_dir);
-    let meta = SlyMeta {
-        classes: vec![SlyAnnMeta::Bitmap.new(&label), SlyAnnMeta::Bbox.new(&label)],
-        tags_images: vec![],
-        tags_objects: vec![],
-    };
-    fs::write(meta_p, to_string_pretty(&meta).unwrap()).expect("Couldn't write Supervisely meta.");
+pub struct SlyDataset {
+    pub label: String,
+    pub dataset_root: String,
 }
 
-pub fn create_ann(in_p: &Path, out_p: &Path, label: &String) -> () {
-    let anns = Anns::new(&in_p);
-    let anns = &anns;
-    println!("Writing to {:?}", out_p);
+impl SlyDataset {
+    pub fn new(label: &String, dataset_root: &Path) -> Self {
+        let label = label.clone();
+        let dataset_root = String::from(dataset_root.to_str().unwrap());
 
-    let sly_anns = SlyAnns {
-        tags: vec![String::from("train")],
-        description: String::from(""),
-        objects: to_slyanns(&anns, &label),
-        size: anns.size.clone(),
-    };
+        let meta_p = format!("{}/meta.json", &dataset_root);
+        let meta = SlyMeta::from(&label);
+        fs::write(meta_p, to_string_pretty(&meta).unwrap())
+            .expect("Couldn't write Supervisely meta.");
 
-    fs::write(out_p, to_string_pretty(&sly_anns).unwrap())
-        .expect("Couldn't write Supervisely anns.");
-}
-
-fn to_slyanns(anns: &Anns, label: &String) -> Vec<SlyAnn> {
-    let mut out = vec![];
-    for (_, ann) in &anns.anns {
-        out.push(SlyAnn::new(ann.bitmap.clone(), None, &label));
-        out.push(SlyAnn::new(None, Some(ann.bbox), &label));
+        SlyDataset {
+            label,
+            dataset_root,
+        }
     }
-    out
+
+    pub fn write_item(&self, anns: &Anns, dest: &Path) -> Result<(), Error> {
+        let sly_anns = SlyAnns {
+            tags: vec![String::from("train")],
+            description: String::from(""),
+            objects: SlyAnn::vec_from_anns(&anns, &self.label),
+            size: anns.size.clone(),
+        };
+
+        let sly_anns = to_string_pretty(&sly_anns)?;
+        fs::write(dest, &sly_anns)?;
+
+        Ok(())
+    }
 }
