@@ -40,7 +40,7 @@ impl SlyAnnMeta {
             SlyAnnMeta::Bbox => SlyAnnMetaInner {
                 title: format!("{}_bbox", label),
                 shape: "rectangle".to_string(),
-                color: "8faa12".to_string(),
+                color: "#8faa12".to_string(),
             },
         }
     }
@@ -74,8 +74,8 @@ struct SlyAnn {
 impl SlyAnn {
     fn new(bitmap: Option<Bitmap>, bbox: Option<Bbox>, label: &String) -> SlyAnn {
         let suffix = match bitmap {
-            None => "bitmap",
-            _ => "bbox",
+            None => "bbox",
+            _ => "bitmap",
         };
 
         let exterior = match bbox {

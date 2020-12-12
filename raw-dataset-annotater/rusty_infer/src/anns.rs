@@ -36,7 +36,7 @@ impl Anns {
     pub fn new(path: &Path) -> Anns {
         let black_pixel = Rgba([0 as u8, 0, 0, 255]);
         let mut img = image::open(path).unwrap();
-        let (h, w) = img.dimensions();
+        let (w, h) = img.dimensions();
         let mut anns: HashMap<String, Bbox> = HashMap::new();
         for (x, y, pixel) in img.pixels() {
             if pixel == black_pixel {

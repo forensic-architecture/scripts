@@ -1,5 +1,5 @@
 mod anns;
-mod errors;
+pub mod errors;
 mod util;
 use crate::anns::Anns;
 use crate::errors::Error;
@@ -13,12 +13,12 @@ use std::path::Path;
 
 #[derive(Debug)]
 pub struct Config {
-    input_dir: String,
-    output_dir: String,
-    dataset_name: String,
-    label: String,
-    img_dir: String,
-    msk_dir: String,
+    pub input_dir: String,
+    pub output_dir: String,
+    pub dataset_name: String,
+    pub label: String,
+    pub img_dir: String,
+    pub msk_dir: String,
 }
 
 impl Config {
