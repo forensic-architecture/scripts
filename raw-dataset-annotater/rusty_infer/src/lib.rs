@@ -1,3 +1,6 @@
+#[macro_use]
+extern crate erased_serde;
+
 mod anns;
 pub mod errors;
 mod util;

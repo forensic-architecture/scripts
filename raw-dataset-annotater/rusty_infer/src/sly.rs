@@ -1,25 +1,26 @@
 use crate::anns::{Anns, Bitmap};
 use crate::errors::Error;
 use crate::util::*;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use serde_json::to_string_pretty;
 use std::fs;
 use std::path::Path;
 
 // ---- META -------
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Debug)]
+#[allow(non_snake_case)]
 pub struct SlyMeta {
     classes: Vec<SlyAnnMetaInner>,
-    tags_images: Vec<String>,
-    tags_objects: Vec<String>,
+    tags: Vec<String>,
+    projectType: String,
 }
 
 impl From<&String> for SlyMeta {
     fn from(label: &String) -> SlyMeta {
         SlyMeta {
             classes: vec![SlyAnnMeta::Bitmap.new(label), SlyAnnMeta::Bbox.new(label)],
-            tags_images: vec![],
-            tags_objects: vec![],
+            tags: vec![],
+            projectType: "images".to_string(),
         }
     }
 }
@@ -46,66 +47,82 @@ impl SlyAnnMeta {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Debug)]
 pub struct SlyAnnMetaInner {
     title: String,
     shape: String,
     color: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize)]
 struct SlyAnns {
     tags: Vec<String>,
     description: String,
-    objects: Vec<SlyAnn>,
+    objects: Vec<Box<dyn SlyAnn>>,
     size: ImSize,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Debug)]
 #[allow(non_snake_case)]
-struct SlyAnn {
+struct SlyAnnBitmap {
     description: String,
     bitmap: Option<Bitmap>,
+    tags: Vec<String>,
+    classTitle: String,
+}
+
+#[derive(Serialize, Debug)]
+#[allow(non_snake_case)]
+struct SlyAnnBbox {
+    description: String,
     tags: Vec<String>,
     classTitle: String,
     points: SlyPoints,
 }
 
-impl SlyAnn {
-    fn new(bitmap: Option<Bitmap>, bbox: Option<Bbox>, label: &String) -> SlyAnn {
-        let suffix = match bitmap {
-            None => "bbox",
-            _ => "bitmap",
-        };
+// NOTE: erased_serde is necessary as SlyAnn contains a Boxed trait. See
+// https://stackoverflow.com/questions/50021897/how-to-implement-serdeserialize-for-a-boxed-trait-object
+// for more information.
+trait SlyAnn: erased_serde::Serialize {}
+impl SlyAnn for SlyAnnBbox {}
+impl SlyAnn for SlyAnnBitmap {}
+serialize_trait_object!(SlyAnn);
 
-        let exterior = match bbox {
-            Some(b) => b.to_vec(),
-            None => vec![],
-        };
-
-        SlyAnn {
-            description: String::from(""),
-            bitmap,
-            tags: vec![],
-            classTitle: format!("{}_{}", label, suffix),
+fn create_slyann(bitmap: Option<Bitmap>, bbox: Option<Bbox>, label: &String) -> Box<dyn SlyAnn> {
+    let description = String::from("");
+    let tags = vec![];
+    match bitmap {
+        None => Box::new(SlyAnnBbox {
+            description,
+            tags,
+            classTitle: format!("{}_bbox", label),
             points: SlyPoints {
-                exterior,
+                exterior: match bbox {
+                    Some(b) => b.to_vec(),
+                    _ => vec![],
+                },
                 interior: [],
             },
-        }
-    }
-
-    fn vec_from_anns(anns: &Anns, label: &String) -> Vec<SlyAnn> {
-        let mut out = vec![];
-        for (_, ann) in &anns.anns {
-            out.push(SlyAnn::new(ann.bitmap.clone(), None, &label));
-            out.push(SlyAnn::new(None, Some(ann.bbox), &label));
-        }
-        out
+        }),
+        _ => Box::new(SlyAnnBitmap {
+            description,
+            tags,
+            classTitle: format!("{}_bitmap", label),
+            bitmap,
+        }),
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+fn vec_from_anns(anns: &Anns, label: &String) -> Vec<Box<dyn SlyAnn>> {
+    let mut out = vec![];
+    for (_, ann) in &anns.anns {
+        out.push(create_slyann(ann.bitmap.clone(), None, &label));
+        out.push(create_slyann(None, Some(ann.bbox), &label));
+    }
+    out
+}
+
+#[derive(Serialize, Debug)]
 struct SlyPoints {
     exterior: Vec<Pos>,
     interior: [u32; 0],
@@ -136,7 +153,7 @@ impl SlyDataset {
         let sly_anns = SlyAnns {
             tags: vec![String::from("train")],
             description: String::from(""),
-            objects: SlyAnn::vec_from_anns(&anns, &self.label),
+            objects: vec_from_anns(&anns, &self.label),
             size: anns.size.clone(),
         };
 
