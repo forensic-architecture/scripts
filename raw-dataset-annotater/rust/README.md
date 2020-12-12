@@ -1,4 +1,4 @@
-# rusty_infer
+# Game Engine -> Annotated Datasets 
 
 ## TODO
 - [ ] generalize `AnnotatedDataset` functions into trait, implemented by
