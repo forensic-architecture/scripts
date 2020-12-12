@@ -1,5 +1,5 @@
-use image::{DynamicImage, Rgba};
-use serde::{Deserialize, Serialize};
+use image::{DynamicImage, GrayImage, Luma, Rgba};
+use serde::Serialize;
 use std::cmp::{max, min};
 
 pub type Pos = [u32; 2];
@@ -16,7 +16,7 @@ impl PixelMethods for Pixel {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Debug, Clone)]
 pub struct ImSize {
     pub height: u32,
     pub width: u32,
@@ -31,13 +31,36 @@ fn abs_diff(x: u32, y: u32) -> u32 {
     max(x, y) - min(x, y)
 }
 
-pub fn crop_b64(im: &mut DynamicImage, bounds: [Pos; 2]) -> String {
+pub fn crop_black_and_white_b64(im: &mut DynamicImage, bounds: [Pos; 2]) -> String {
     let [tr, bl] = bounds;
     let w = abs_diff(tr[0], bl[0]);
     let h = abs_diff(tr[1], bl[1]);
+
     let im = im.crop(tr[0], tr[1], w, h);
+    let crop = im.to_luma8();
+    let mut mask = GrayImage::new(w, h);
+
+    let black_px = Luma([0]);
+    let white_px = Luma([255]);
+
+    for y in 0..h {
+        for x in 0..w {
+            let p = crop.get_pixel(x, y);
+            mask.put_pixel(
+                x,
+                y,
+                match p[0] {
+                    0 => black_px,
+                    _ => white_px,
+                },
+            );
+        }
+    }
+
+    mask.save("/tmp/testmask.png").unwrap();
     let mut buf = vec![];
-    im.write_to(&mut buf, image::ImageOutputFormat::Png)
+    let mask = DynamicImage::ImageLuma8(mask);
+    mask.write_to(&mut buf, image::ImageOutputFormat::Png)
         .unwrap();
     base64::encode(&buf)
 }

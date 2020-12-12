@@ -76,6 +76,7 @@ struct SlyAnnBitmap {
 struct SlyAnnBbox {
     description: String,
     tags: Vec<String>,
+    geometryType: String,
     classTitle: String,
     points: SlyPoints,
 }
@@ -96,6 +97,7 @@ fn create_slyann(bitmap: Option<Bitmap>, bbox: Option<Bbox>, label: &String) -> 
             description,
             tags,
             classTitle: format!("{}_bbox", label),
+            geometryType: "rectangle".to_string(),
             points: SlyPoints {
                 exterior: match bbox {
                     Some(b) => b.to_vec(),
@@ -151,7 +153,7 @@ impl SlyDataset {
 
     pub fn write_item(&self, anns: &Anns, dest: &Path) -> Result<(), Error> {
         let sly_anns = SlyAnns {
-            tags: vec![String::from("train")],
+            tags: vec![],
             description: String::from(""),
             objects: vec_from_anns(&anns, &self.label),
             size: anns.size.clone(),

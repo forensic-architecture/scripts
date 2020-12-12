@@ -83,7 +83,7 @@ impl Anns {
                     bbox: [ann[0], ann[1]],
                     bitmap: Some(Bitmap {
                         origin: ann[0],
-                        data: crop_b64(&mut img, ann),
+                        data: crop_black_and_white_b64(&mut img, ann),
                     }),
                 },
             );

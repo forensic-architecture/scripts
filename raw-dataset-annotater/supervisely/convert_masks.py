@@ -109,10 +109,11 @@ def gen_and_save_anns(args):
     # meta.json describes the datasets at the top level
     utils.save_meta(args.label, args.outfolder)
 
+    print(args.imagefoldername)
     IN_ANN_PATH = f"{args.infolder}/{args.imagefoldername}"
     if not os.path.isdir(IN_ANN_PATH):
         raise Exception(
-            'A directory "{args.imagefoldername}" needs to exist in the directory.'
+            f"A directory '{args.imagefoldername}' needs to exist in the directory."
         )
 
     ann_paths = [
