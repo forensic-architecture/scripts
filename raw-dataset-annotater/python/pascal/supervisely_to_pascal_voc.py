@@ -1,6 +1,7 @@
 import glob, json, os, shutil
 from pascal_voc_writer import *
 import config as cfg
+import argparse
 
 def convert(size, box):
     dw = 1./size[0]
@@ -29,7 +30,7 @@ def supervisely_to_pascal_voc():
     --> labelsN.txt
 
     In other words labels folder should be located next to the image folder in the same directory named "labels".
-    """    
+    """
     if not os.path.exists(cfg.voc_folder_name):
         os.mkdir(cfg.voc_folder_name)
 
@@ -81,9 +82,11 @@ def supervisely_to_pascal_voc():
                 writer.save('{}/Annotations/{}.xml'.format(cfg.voc_folder_name, image_name))
                 label_txt.close()
 
-    list_file.close()        
+    list_file.close()
     image_set.close()
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
     supervisely_to_pascal_voc()
-                
+
