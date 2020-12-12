@@ -74,7 +74,7 @@ impl Anns {
 
         let mut actual_anns: HashMap<String, Ann> = HashMap::new();
         for (colour, ann) in anns {
-            if too_tiny(ann, &size) {
+            if too_tiny(&ann, &size) {
                 continue;
             }
             actual_anns.insert(

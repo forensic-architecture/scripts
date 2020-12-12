@@ -118,7 +118,7 @@ fn create_slyann(bitmap: Option<Bitmap>, bbox: Option<Bbox>, label: &String) -> 
 fn vec_from_anns(anns: &Anns, label: &String) -> Vec<Box<dyn SlyAnn>> {
     let mut out = vec![];
     for (_, ann) in &anns.anns {
-        out.push(create_slyann(ann.bitmap.clone(), None, &label));
+        // out.push(create_slyann(ann.bitmap.clone(), None, &label));
         out.push(create_slyann(None, Some(ann.bbox), &label));
     }
     out

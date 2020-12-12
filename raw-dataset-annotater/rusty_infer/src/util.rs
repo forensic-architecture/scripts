@@ -1,6 +1,9 @@
+// use flate2::write::ZlibEncoder;
+// use flate2::Compression;
 use image::{DynamicImage, GrayImage, Luma, Rgba};
 use serde::Serialize;
 use std::cmp::{max, min};
+// use std::io::prelude::*;
 
 pub type Pos = [u32; 2];
 pub type Bbox = [Pos; 2];
@@ -23,8 +26,12 @@ pub struct ImSize {
 }
 
 // TODO
-pub fn too_tiny(pxls: Bbox, size: &ImSize) -> bool {
+pub fn too_tiny(pxls: &Bbox, size: &ImSize) -> bool {
     false
+    // match pxls {
+    //     Some(_) => false,
+    //     None => true,
+    // }
 }
 
 fn abs_diff(x: u32, y: u32) -> u32 {
@@ -62,5 +69,11 @@ pub fn crop_black_and_white_b64(im: &mut DynamicImage, bounds: [Pos; 2]) -> Stri
     let mask = DynamicImage::ImageLuma8(mask);
     mask.write_to(&mut buf, image::ImageOutputFormat::Png)
         .unwrap();
+
+    // let mut e = ZlibEncoder::new(Vec::new(), Compression::default());
+    // e.write_all(mask.as_bytes()).unwrap();
+    // let compressed_bytes = e.finish().unwrap();
+    // base64::encode(&compressed_bytes)
+
     base64::encode(&buf)
 }
