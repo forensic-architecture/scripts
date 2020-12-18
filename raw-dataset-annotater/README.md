@@ -1,53 +1,17 @@
-# src
+# Raw Dataset Annotater
+These are scripts designed to take sets of images rendered from game engines
+(one of which represents the source image, and the other the annotations on
+that source image of objects of interest)-- and produce annotated datasets in
+various formats for ML training.
 
-This repository contains scripts to run necessary transforms and
-post-processing for the data produced from UE4 in preparation for training ML
-classifiers.
+There are two versions of these scripts: one in Python, and the other in Rust.
 
-## setup
-From a bash or zsh shell inside this folder ('src'), run:
-```
-source setup.sh
-```
-This command will create a Docker image with the necessary dependencies
-installed, and spin up a bash shell inside a Docker container created from 
-that image. The Docker image will not rebuild if it already exists in your 
-local image list.
+## Python
+Works in a finicky way. You can convert from the raw data to [Supervisely](https://docs.supervise.ly/data-organization/00_ann_format_navi), and then with a separate set of scripts convert from Supervisely to the [Pascal VOC format](https://towardsdatascience.com/coco-data-format-for-object-detection-a4c5eaf518c5).
 
-### From 'raw' to annotated dataset
-Annotations are exported 'raw' from a game engine simply as an image that
-consists of another render pass, where pixels that include an object of
-interested are a non-black colour. Each separate object is coded with
-a different colour.  There is currently no semantic to encode multiple
-different objects of interest in a raw annotation.
+## Rust
+Currently works minimally to produce annotated datasets with just Supervisely
+bounding boxes (no bitmap annotations yet). These can then be further converted
+to Pascal VOC with the Python scripts.
 
-Ensure that the exported images are organised with the following folder
-structure:
-
-.
-+-- img
-|   +-- img1.png
-|   +-- img2.png
-+-- raw_ann
-|   +-- img1.png
-|   +-- img2.png
-
-
-The original image should be in the 'img' folder, and the mask should be a file
-of the same name in the 'raw_ann' folder.
-
-Once you have confirmed that the folder is organised correctly, adjust the
-variables that are templated in `run_annotater`. In particular, make sure that
-the `DATASET_VOLUMES` is appropriate to where datasets are stored on your local
-disk.
-
-Once this is in order, run:
-```
-./run_annotater
-```
-
-This will build a Docker container with all the required dependencies and run
-the conversion scripts. Note that once the container is built, it will prompt
-you for the folder name where your images are, and the label you want to give.
-
-The scripts are currently hardcoded to produce [Supervisely's annotation format](https://docs.supervise.ly/import/local_files/supervisely/), but the structure is set up to provide alternative formats in the future.
+Running details for each of the scripts are in the respective folders. 

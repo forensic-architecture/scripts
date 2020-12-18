@@ -33,6 +33,6 @@ def rename_files():
             new_path = new_path.replace('_png', '')
             new_path = new_path.replace(' ', '_')
             shutil.move(file_path, new_path)
-        
+
 if __name__ == "__main__":
     rename_files()
