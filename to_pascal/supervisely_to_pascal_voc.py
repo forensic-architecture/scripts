@@ -29,7 +29,7 @@ def supervisely_to_pascal_voc():
     --> labelsN.txt
 
     In other words labels folder should be located next to the image folder in the same directory named "labels".
-    """    
+    """
     if not os.path.exists(cfg.voc_folder_name):
         os.mkdir(cfg.voc_folder_name)
 
@@ -42,15 +42,16 @@ def supervisely_to_pascal_voc():
 #     list_file = open('{}.txt'.format(cfg.dataset), 'w')
     for json_path_pattern in cfg.json_path_pattern:
         for file in glob.glob(json_path_pattern):
-            print(file)
+            prefix = '/' if file.startswith('/') else ''
             with open(file) as json_file:
                 data = json.load(json_file)
                 image_path = file.split('/')
-                image_path[-1] = image_path[-1].split('.')[0] + '.png'
+                image_path[-1] = image_path[-1].split('.')[0] + '.jpg'
                 image_path[-2] = 'img'
                 image_path = os.path.join(*image_path)
+                image_path = f'{prefix}{image_path}'
                 image_name = cfg.prefix_im_name + '_' + str(image_index).zfill(5)
-                new_image_path = '{}/JPEGImages/{}.jpg'.format(cfg.voc_folder_name, image_name)
+                new_image_path = f'{cfg.voc_folder_name}/JPEGImages/{image_name}.jpg'
                 image_set.write(new_image_path+'\n')
 #                 list_file.write(new_image_path+'\n')
                 image_index += 1
@@ -84,9 +85,9 @@ def supervisely_to_pascal_voc():
                 label_txt.close()
                 label_1shot.close()
 
-#     list_file.close()        
+#     list_file.close()
     image_set.close()
 
 if __name__ == "__main__":
     supervisely_to_pascal_voc()
-                
+
