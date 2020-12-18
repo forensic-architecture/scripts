@@ -1,5 +1,5 @@
 import glob, json, os, shutil
-from pascal_voc_writer import *
+from pascal_voc_writer_fa import *
 import config as cfg
 
 def convert(size, box):
@@ -33,13 +33,13 @@ def supervisely_to_pascal_voc():
     if not os.path.exists(cfg.voc_folder_name):
         os.mkdir(cfg.voc_folder_name)
 
-    for subfolder in ['Annotations', 'JPEGImages', 'labels', 'ImageSets', 'ImageSets/Main']:
+    for subfolder in ['Annotations', 'JPEGImages', 'labels', 'labels_1c', 'ImageSets', 'ImageSets/Main']:
         if not os.path.exists(os.path.join(cfg.voc_folder_name, subfolder)):
             os.mkdir(os.path.join(cfg.voc_folder_name, subfolder))
 
     image_index = 0
-    image_set = open(os.path.join(cfg.voc_folder_name, 'ImageSets', 'Main', cfg.dataset, 'w')
-    list_file = open('{}.txt'.format(cfg.dataset), 'w')
+    image_set = open(os.path.join(cfg.voc_folder_name, 'ImageSets', 'Main', cfg.dataset), 'w')
+#     list_file = open('{}.txt'.format(cfg.dataset), 'w')
     for json_path_pattern in cfg.json_path_pattern:
         for file in glob.glob(json_path_pattern):
             print(file)
@@ -50,9 +50,9 @@ def supervisely_to_pascal_voc():
                 image_path[-2] = 'img'
                 image_path = os.path.join(*image_path)
                 image_name = cfg.prefix_im_name + '_' + str(image_index).zfill(5)
-                image_set.write(image_name+'\n')
                 new_image_path = '{}/JPEGImages/{}.jpg'.format(cfg.voc_folder_name, image_name)
-                list_file.write(new_image_path+'\n')
+                image_set.write(new_image_path+'\n')
+#                 list_file.write(new_image_path+'\n')
                 image_index += 1
                 try:
                     shutil.copy(image_path, new_image_path)
@@ -60,6 +60,7 @@ def supervisely_to_pascal_voc():
                     print('error', image_path, new_image_path)
 
                 label_txt = open('{}/labels/{}.txt'.format(cfg.voc_folder_name, image_name), 'w')
+                label_1shot = open('{}/labels_1c/{}.txt'.format(cfg.voc_folder_name, image_name), 'w')
                 w = data["size"]["width"]
                 h = data["size"]["height"]
                 writer = Writer(new_image_path, w, h)
@@ -77,11 +78,13 @@ def supervisely_to_pascal_voc():
                         writer.addObject(cfg.class_mapping[classname], x_min, y_min, x_max, y_max)
                         bb = convert((int(w), int(h)), [float(a) for a in [x_min, x_max, y_min, y_max]])
                         label_txt.write(str(cfg.classes_conversion[classname]) + " " + " ".join([str(a) for a in bb]) + '\n')
+                        label_1shot.write(str(cfg.classes_conversion_1shot[classname]) + " " + " ".join([str(a) for a in bb]) + '\n')
 
                 writer.save('{}/Annotations/{}.xml'.format(cfg.voc_folder_name, image_name))
                 label_txt.close()
+                label_1shot.close()
 
-    list_file.close()        
+#     list_file.close()        
     image_set.close()
 
 if __name__ == "__main__":
