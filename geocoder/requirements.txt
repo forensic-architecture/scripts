@@ -1,4 +1,1 @@
-requests
-geopandas
 geopy
-pandas
