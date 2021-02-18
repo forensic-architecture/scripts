@@ -18,20 +18,21 @@ def main():
         locationGeocoded = locator.geocode(locationQuery)
 
         geocode = RateLimiter(locator.geocode, min_delay_seconds=1)
-
+        location_city = location['city']
+        location_state = location['state']
         if locationGeocoded:
             raw = locationGeocoded.raw
             print(raw)
-            stripped = {'city': location['city'],
-                        'state': location['state'],
+            stripped = {'city': location_city,
+                        'state': location_state,
                         'latitude': raw['lat'],
                         'longitude': raw['lon'],
                         'display_name': raw['display_name']
                         }
             locationsResult.append(stripped)
         else:
-            locationsResult.append({'city': location['city'],
-                                    'state': location['state'],
+            locationsResult.append({'city': location_city,
+                                    'state': location_state,
                                     'latitude': 'NOT_FOUND',
                                     'longitude': 'NOT_FOUND',
                                     'display_name': 'NOT_FOUND'}
