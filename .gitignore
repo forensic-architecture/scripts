@@ -9,6 +9,7 @@
 .DS_Store
 __pycache__/*
 *.py[cod]
+geocoder-env
 
 # C extensions
 *.so

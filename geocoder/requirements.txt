@@ -1,0 +1,4 @@
+requests
+geopandas
+geopy
+pandas
