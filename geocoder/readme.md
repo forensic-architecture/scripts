@@ -1,6 +1,8 @@
 # Geo Coder
 
-Takes a CSV, returns a CSV with Longitude and Latitude. No more Google Map cut and paste.
+
+A tool that automatically 'geo-codes' a list of locations (States and Cities) generating longitude and latitude for each location so you don't have to manually look up the latitude and longitude.
+
 
 Uses: OpenStreetMap
 
