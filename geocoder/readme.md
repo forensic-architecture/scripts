@@ -8,9 +8,7 @@ Uses: OpenStreetMap
 
 ## Install it
 
-Setup:
-
-Python and Pip set up
+## Python and Pip set up
 
 Install Python and pip3 then use Pip to set up your Python local environment:
 
