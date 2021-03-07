@@ -1,0 +1,24 @@
+{
+    "An Good Example Source": {
+        "paths": [
+            "https://forensic-architecture.org/investigation/the-extrajudicial-execution-of-ahmad-erekat"
+        ],
+        "id": "An Example Source",
+        "title": "An Example Source",
+        "description": "An Example Source Description",
+        "thumbnail": "https://content.forensic-architecture.org/wp-content/uploads/2021/02/Ahmad-Photo-768x432.jpg",
+        "url": "https://forensic-architecture.org/investigation/the-extrajudicial-execution-of-ahmad-erekat",
+        "type": ""
+    },
+        "An BAD Example Source": {
+        "paths": [
+            "https://www.bbc.com/news/wor-asia-56309338"
+        ],
+        "id": "An Example Source",
+        "title": "An Example Source",
+        "description": "An Example Source Description",
+        "thumbnail": "https://content.forensic-architecture.org/wp-content/uploads/2021/02/Ahm-Photo-768x432.jpg",
+        "url": "https://www.bbc.com/news/wor-asia-56309338",
+        "type": ""
+    }
+}
