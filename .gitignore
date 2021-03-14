@@ -16,3 +16,6 @@ __pycache__/*
 pip-log.txt
 pip-delete-this-directory.txt
 tags
+
+results.csv
+scripts-env
