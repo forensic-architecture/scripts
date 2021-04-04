@@ -38,4 +38,4 @@ Once it completes it creates a file called `results.csv` that you can open and c
 
 ## ignoring some urls
 
-Some urls mau not be accessible in your geogra[hic region but are accessible outside. If you have urls like this add them to the `ignoreList` array in `linkChecker.py`. Any ignored urls are included in the results of the `results.csv`
+Some urls mau not be accessible in your geographic region but are accessible outside. If you have urls like this add them to the `ignoreList` array in `linkChecker.py`. Any ignored urls are included in the results of the `results.csv`
